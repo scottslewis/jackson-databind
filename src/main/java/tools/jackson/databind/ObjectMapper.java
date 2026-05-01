@@ -1547,8 +1547,13 @@ public class ObjectMapper
     {
         _assertNotNull("content", content);
         DeserializationContextExt ctxt = _deserializationContext();
-        return (T) _readMapAndClose(ctxt,
+        Object result = _readMapAndClose(ctxt,
                 _streamFactory.createParser(ctxt, content), _typeFactory.constructType(valueType));
+
+        if (isEnabled(MapperFeature.USE_JREF)) {
+        	result = new JRef().resolveRefs(result);
+        }
+        return (T) result;
     }
 
     /**
@@ -1844,6 +1849,11 @@ public class ObjectMapper
     @SuppressWarnings("resource")
     public String writeValueAsString(Object value) throws JacksonException
     {
+    	
+    	if (this.isEnabled(MapperFeature.USE_JREF)) {
+    		value = new JRef().buildRefs(value);
+    	}
+    	
         final BufferRecycler br = _streamFactory._getBufferRecycler();
         // alas, we have to pull the recycler directly here...
         try (SegmentedStringWriter sw = new SegmentedStringWriter(br)) {

@@ -594,8 +594,10 @@ public enum MapperFeature
      *
      * @since 3.2
      */
-    EXTERNAL_TYPE_ID_ALWAYS_VISIBLE(false)
-    ;
+    EXTERNAL_TYPE_ID_ALWAYS_VISIBLE(false),
+
+    // XXX JRef support
+    USE_JREF(false);
 
     private final boolean _defaultState;
     private final long _mask;
