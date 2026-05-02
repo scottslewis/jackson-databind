@@ -77,6 +77,19 @@ public class JsonJRefTest extends DatabindTestUtil {
 		    .enable(MapperFeature.USE_JREF)
 		    .build();
 
+	final ObjectMapper JREFMAPPER1 = jsonMapperBuilder()
+		    .enable(SerializationFeature.INDENT_OUTPUT)
+		    // to allow serialization of "empty" POJOs (no properties to serialize)
+		    // (without this setting, an exception is thrown in those cases)
+		    .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+		    // DeserializationFeature for changing how JSON is read as POJOs:
+		    // to prevent exception when encountering unknown property:
+		    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+		    // to allow coercion of JSON empty String ("") to null Object value:
+		    .enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)
+		    .enable(MapperFeature.USE_JREF)
+		    .build();
+
 	final JRef JREF = new JRef();
 	
     protected Message buildMessage() {
@@ -111,8 +124,41 @@ public class JsonJRefTest extends DatabindTestUtil {
 		System.out.println("message="+message);
 		var serializedMessage = JREFMAPPER.writeValueAsString(message);
 		System.out.println("serializedMessage="+serializedMessage);
-		Message deserializedMessage = JREFMAPPER.readValue(serializedMessage, Message.class);
+		Message deserializedMessage = JREFMAPPER1.readValue(serializedMessage, Message.class);
 		System.out.println("deserializedMessage=" + deserializedMessage);
 	}
 	
+	@Test 
+	void testDeserializationOnly() throws Exception {
+	String serMessage = "{\r\n"
+			+ "  \"items\" : [ {\r\n"
+			+ "    \"name\" : \"wendy\",\r\n"
+			+ "    \"parent\" : {\r\n"
+			+ "      \"name\" : \"sam\",\r\n"
+			+ "      \"parent\" : null,\r\n"
+			+ "      \"props\" : {\r\n"
+			+ "        \"s1\" : 1\r\n"
+			+ "      }\r\n"
+			+ "    },\r\n"
+			+ "    \"props\" : {\r\n"
+			+ "      \"p\" : {\r\n"
+			+ "        \"$ref\" : \"#/items/0/parent\"\r\n"
+			+ "      },\r\n"
+			+ "      \"q\" : \"r\"\r\n"
+			+ "    }\r\n"
+			+ "  }, {\r\n"
+			+ "    \"name\" : \"rick\",\r\n"
+			+ "    \"parent\" : {\r\n"
+			+ "      \"$ref\" : \"#/items/0/parent\"\r\n"
+			+ "    },\r\n"
+			+ "    \"props\" : {\r\n"
+			+ "      \"$ref\" : \"#/items/0/props\"\r\n"
+			+ "    }\r\n"
+			+ "  } ]\r\n"
+			+ "}";
+	
+			// Use MAPPER / no JRef
+			Object value = MAPPER.readValue(serMessage, Message.class);
+			System.out.println(value);
+	}
 }
