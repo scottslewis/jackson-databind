@@ -19,6 +19,7 @@ import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.ValueDeserializer;
 import tools.jackson.databind.deser.ValueDeserializerModifier;
+import tools.jackson.databind.deser.std.DelegatingDeserializer;
 import tools.jackson.databind.deser.std.StdDeserializer;
 import tools.jackson.databind.module.SimpleModule;
 import tools.jackson.databind.JavaType;
@@ -45,40 +46,23 @@ public class JRefBeanDeserializerTest
         }
     }
 
-    static class JRefBeanDeserializer extends StdDeserializer<Object> {
+    static class JRefBeanDeserializer extends DelegatingDeserializer {
     	
-    	StdDeserializer<Object> delegate;    	
-    	DeserializationContext context;
-    	BeanProperty property;
-    	
-		public JRefBeanDeserializer(StdDeserializer<Object> src) {
+		public JRefBeanDeserializer(ValueDeserializer<?> src) {
     		super(src);
-    		this.delegate = src;
-    	}
+     	}
     	
-		@Override
-        public ValueDeserializer<?> createContextual(DeserializationContext ctxt,
-                BeanProperty property)
-        {
-        	JavaType valueType = getValueType();
-        	System.out.println("valueType=" + valueType);
-        	JavaType contextType = ctxt.getContextualType();
-        	System.out.println("contextType=" + contextType);
-        	JavaType propertyType = (property != null) ? property.getType() : null;
-        	System.out.println("propertyType=" + propertyType);
-			// Set context for this deserializer
-			this.context = ctxt;
-			this.property = property;
-        	delegate.createContextual(ctxt, property);
-        	return this;
-        }
-
 		@Override
 		public Object deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
-			System.out.println("deserialize prop=" + this.property);
-			Object result = this.delegate.deserialize(p, ctxt);
+			Object result = super.deserialize(p, ctxt);
 			System.out.println("deserializer result=" + result);
 			return result;
+		}
+
+		@Override
+		protected ValueDeserializer<?> newDelegatingInstance(ValueDeserializer<?> newDelegatee) {
+			// TODO Auto-generated method stub
+			return new JRefBeanDeserializer(newDelegatee);
 		}
     }
     
